@@ -9,13 +9,13 @@ bs4 = "*"
 tiktoken = "*"
 openai = "*"
 environs = "*"
-python-telegram-bot = "*"
 feedparser = "*"
 python-dateutil = "*"
 selenium = "*"
 langchain = "*"
 playwright = "*"
 aiogram = "*"
+python-telegram-bot = {version = "*", extras = ["rate-limiter"]}
 
 [dev-packages]
 

@@ -1,17 +1,25 @@
 import logging
-import sys
+import os
 
-from core.config import DEBUG, LOG_FILE
+# Define the logging level and format
+logging.basicConfig(level=logging.INFO,
+                    format='[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
-if not DEBUG:
-    sys.tracebacklimit = 0
+# Create a logger object
+logger = logging.getLogger(__name__)
 
-# logger config
-logger: logging.Logger = logging.getLogger(__name__)
-logging.basicConfig(
-    filename=None if DEBUG else LOG_FILE,
-    encoding="utf-8",
-    format=f"[%(asctime)s] %(levelname)-8s {'%(filename)s:%(lineno)d - ' if DEBUG else ''}%(name)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    level=logging.INFO,
-)
+# Create a file handler for logging
+log_directory = "logs"
+if not os.path.exists(log_directory):
+    os.makedirs(log_directory)
+
+file_handler = logging.FileHandler(f"{log_directory}/app.log")
+file_handler.setLevel(logging.ERROR)
+
+# Create a logging format for the file handler
+formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s')
+file_handler.setFormatter(formatter)
+
+# Add the file handler to the logger
+logger.addHandler(file_handler)
