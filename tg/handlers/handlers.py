@@ -1,11 +1,9 @@
 import json
 
-from aiohttp import ClientSession
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler
 
 from core import PROJECT_ROOT
-from tg.handlers.logic import process_rss_url
 
 
 # Callback function to handle button presses

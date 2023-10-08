@@ -17,4 +17,3 @@ async def set_default_commands(application: Application) -> None:
 
     ]
     await application.bot.set_my_commands(commands=commands, scope=None, language_code=None)
-
