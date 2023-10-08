@@ -1,0 +1,10 @@
+[2023-10-08 18:14:01,228] [ERROR] [core.logger] - Error processing RSS URL https://bair.berkeley.edu/blog/feed.xml. Retrying... Error: Can't parse entities: unsupported start tag "br" at byte offset 34
+[2023-10-08 18:18:49,947] [ERROR] [core.logger] - Error processing RSS URL https://bair.berkeley.edu/blog/feed.xml. Retrying... Error: Can't parse entities: unsupported start tag "br" at byte offset 34
+[2023-10-08 20:01:03,812] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('To use `AIORateLimiter`, PTB must be installed via `pip install "python-telegram-bot[rate-limiter]"`.')
+[2023-10-08 20:01:51,386] [CRITICAL] [core.logger] - Unhandled error: TypeError("CommandHandler.__init__() got an unexpected keyword argument 'pass_args'")
+[2023-10-08 20:35:15,163] [CRITICAL] [core.logger] - Unhandled error: TimedOut('Timed out')
+[2023-10-08 20:38:28,893] [CRITICAL] [core.logger] - Unhandled error: TimedOut('Timed out')
+[2023-10-08 20:40:27,872] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('no running event loop')
+[2023-10-08 20:41:47,394] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('Cannot close a running event loop')
+[2023-10-08 20:43:21,222] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('Cannot close a running event loop')
+[2023-10-08 20:45:00,272] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('Cannot close a running event loop')
