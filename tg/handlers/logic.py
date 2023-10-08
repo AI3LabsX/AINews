@@ -204,4 +204,4 @@ async def monitor_feed():
             tasks = [process_rss_url(session, rss_url, latest_pub_dates) for rss_url in rss_urls]
             await asyncio.gather(*tasks)
 
-        await asyncio.sleep(10)
+        await asyncio.sleep(600)
