@@ -15,7 +15,6 @@ from telegram import Bot
 from telegram.constants import ParseMode
 
 from core import PROJECT_ROOT
-from core.env import env
 from core.logger import logger
 
 openai.api_key = os.environ.get('OPENAI_API_KEY')
