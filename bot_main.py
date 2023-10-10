@@ -1,15 +1,17 @@
 import asyncio
+import os
 from threading import Thread
 
 from telegram.constants import ParseMode
 from telegram.ext import AIORateLimiter, Application, Defaults
 
-from core.env import env
 from core.logger import logger
 from tg.bot_command import set_default_commands
 from tg.handlers import HANDLERS
 from tg.handlers.errors import error_handler
 from tg.handlers.logic import monitor_feed
+
+TELEGRAM_TOKEN = os.environ.get('BOT_TOKEN')
 
 
 def start_bot_in_thread(application: Application):
@@ -35,7 +37,7 @@ def register_all_handlers(application: Application) -> None:
 async def start_bot():
     application = (
         Application.builder()
-        .token(token=env.get_token_or_exit())
+        .token(token=TELEGRAM_TOKEN)
         .defaults(defaults=Defaults(parse_mode=ParseMode.HTML, block=False))
         .rate_limiter(rate_limiter=AIORateLimiter(max_retries=3))
         .post_init(post_init=on_startup)

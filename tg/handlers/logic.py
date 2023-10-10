@@ -1,6 +1,7 @@
 # Initialize OpenAI
 import asyncio
 import json
+import os
 from typing import Dict, Optional, Any
 
 import feedparser
@@ -17,8 +18,8 @@ from core import PROJECT_ROOT
 from core.env import env
 from core.logger import logger
 
-openai.api_key = env.get_openai_api()
-TELEGRAM_TOKEN = env.get_token_or_exit()
+openai.api_key = os.environ.get('OPENAI_API_KEY')
+TELEGRAM_TOKEN = os.environ.get('BOT_TOKEN')
 TELEGRAM_CHANNEL = '@ai3daily'
 
 RETRY_COUNT = 3  # Number of times to retry processing an article if it fails
