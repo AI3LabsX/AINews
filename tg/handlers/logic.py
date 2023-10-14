@@ -17,7 +17,6 @@ from telegram.constants import ParseMode
 from core import PROJECT_ROOT
 from core.logger import logger
 
-
 openai.api_key = os.environ.get('OPENAI_API_KEY')
 TELEGRAM_TOKEN = os.environ.get('BOT_TOKEN')
 TELEGRAM_CHANNEL = '@ai3daily'
@@ -43,6 +42,7 @@ async def is_article_related_to_ai(title: str, content: str) -> bool:
     }
     response = await openai.ChatCompletion.acreate(**data)
     answer = response['choices'][0]['message']['content']
+    logger.info(answer)
     return answer.strip().lower() == 'true'
 
 
@@ -98,21 +98,19 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
         "messages": [
             {
                 "role": "system",
-                "content": "You are a news summarizer bot. Your goal is to make the news easy to understand, "
-                           "especially for non-technical readers. Try to explain in words that everyone would "
-                           "understand. Extract and present the essential key points from "
-                           "the provided news content in bullet points. Whole new summary should be concise and "
-                           "short, yet ensure that it captures the essence of the information without omitting "
-                           "crucial details. After the bullet points, provide a short conclusion that encapsulates "
-                           "the overall theme or impact of the news. Remember, the summary should be short but should "
-                           "not lose any essential information. Overall length of the post have to be 120-150 words max!"
-
+                "content": "You are a news summarizer bot. Your primary goal is to simplify the news for everyday "
+                           "readers. Break down the provided news content into easy-to-understand bullet points. "
+                           "Ensure these points capture the core essence without any jargon or complex terms. After "
+                           "the bullet points, offer a straightforward conclusion in simple words that sums up the "
+                           "main takeaway. The entire summary, including bullet points and conclusion, should not "
+                           "exceed 120-150 words. Make it as concise and clear as possible. "
             },
             {
                 "role": "user",
                 "content": f"News Title: {title}. News Content: {content}"
             }
-        ],
+        ]
+        ,
         "temperature": 0,
         "max_tokens": 200,
         "top_p": 0.4,
@@ -247,5 +245,3 @@ async def monitor_feed():
         if first_run:  # If it's the first run, update the flag after processing all feeds
             first_run = False
         await asyncio.sleep(600)
-
-
