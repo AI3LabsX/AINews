@@ -196,7 +196,7 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
         except Exception as e:
             logger.error(f"Error processing RSS URL {rss_url}. Retrying... Error: {e}")
             retries += 1
-            await asyncio.sleep(10)
+            await asyncio.sleep(600)
 
 
 def load_rss_feeds():

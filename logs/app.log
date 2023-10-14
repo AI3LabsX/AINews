@@ -24,3 +24,7 @@
 [2023-10-14 16:37:27,285] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('Cannot close a running event loop')
 [2023-10-14 16:39:29,054] [CRITICAL] [core.logger] - Unhandled error: TypeError("Application.run_polling() got an unexpected keyword argument 'stop_event'")
 [2023-10-14 16:40:07,773] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('Cannot close a running event loop')
+[2023-10-14 17:45:19,521] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('Cannot close a running event loop')
+[2023-10-14 17:46:49,304] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('Cannot close a running event loop')
+[2023-10-14 17:49:22,432] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('Cannot close a running event loop')
+[2023-10-14 17:53:06,909] [CRITICAL] [core.logger] - Unhandled error: AttributeError("'Application' object has no attribute 'start_polling'")
