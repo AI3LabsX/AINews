@@ -20,3 +20,7 @@
 [2023-10-14 16:24:21,369] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('Cannot close a running event loop')
 [2023-10-14 16:26:55,554] [ERROR] [core.logger] - Error processing RSS URL https://techcrunch.com/feed/. Retrying... Error: You must pass the token you received from https://t.me/Botfather!
 [2023-10-14 16:26:56,396] [ERROR] [core.logger] - Error processing RSS URL https://www.marktechpost.com/feed/. Retrying... Error: You must pass the token you received from https://t.me/Botfather!
+[2023-10-14 16:35:55,923] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('Cannot close a running event loop')
+[2023-10-14 16:37:27,285] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('Cannot close a running event loop')
+[2023-10-14 16:39:29,054] [CRITICAL] [core.logger] - Unhandled error: TypeError("Application.run_polling() got an unexpected keyword argument 'stop_event'")
+[2023-10-14 16:40:07,773] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('Cannot close a running event loop')
