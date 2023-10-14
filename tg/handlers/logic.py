@@ -105,7 +105,7 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
                            "short, yet ensure that it captures the essence of the information without omitting "
                            "crucial details. After the bullet points, provide a short conclusion that encapsulates "
                            "the overall theme or impact of the news. Remember, the summary should be short but should "
-                           "not lose any essential information. Overall length of the post have to be 120-150m words "
+                           "not lose any essential information. Overall length of the post have to be 120-150 words max!"
 
             },
             {
