@@ -1,5 +1,6 @@
 import asyncio
 import os
+from threading import Thread
 
 from telegram.constants import ParseMode
 from telegram.ext import AIORateLimiter, Application, Defaults
@@ -13,18 +14,9 @@ from tg.handlers.logic import monitor_feed
 TELEGRAM_TOKEN = os.environ.get('BOT_TOKEN')
 
 
-async def start_bot():
-    application = (
-        Application.builder()
-        .token(token=TELEGRAM_TOKEN)
-        .defaults(defaults=Defaults(parse_mode=ParseMode.HTML, block=False))
-        .rate_limiter(rate_limiter=AIORateLimiter(max_retries=3))
-        .post_init(post_init=on_startup)
-        .build()
-    )
-
-    register_all_handlers(application=application)
-    await application.run_polling(drop_pending_updates=True)
+def start_bot_in_thread(application: Application):
+    asyncio.set_event_loop(asyncio.new_event_loop())
+    application.run_polling(drop_pending_updates=True)
 
 
 async def on_startup(application: Application) -> None:
@@ -42,10 +34,24 @@ def register_all_handlers(application: Application) -> None:
     application.add_error_handler(callback=error_handler)
 
 
+async def start_bot():
+    application = (
+        Application.builder()
+        .token(token=TELEGRAM_TOKEN)
+        .defaults(defaults=Defaults(parse_mode=ParseMode.HTML, block=False))
+        .rate_limiter(rate_limiter=AIORateLimiter(max_retries=3))
+        .post_init(post_init=on_startup)
+        .build()
+    )
+
+    register_all_handlers(application=application)
+    thread = Thread(target=start_bot_in_thread, args=(application,))
+    thread.start()
+
+
 async def main():
-    bot_task = asyncio.create_task(start_bot())
-    monitor_task = asyncio.create_task(monitor_feed())
-    await asyncio.gather(bot_task, monitor_task)
+    await start_bot()  # This will start the bot in a separate thread
+    await monitor_feed()  # This will run in the main thread's event loop
 
 
 if __name__ == "__main__":
