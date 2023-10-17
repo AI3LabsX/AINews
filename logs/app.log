@@ -28,3 +28,6 @@
 [2023-10-14 17:46:49,304] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('Cannot close a running event loop')
 [2023-10-14 17:49:22,432] [CRITICAL] [core.logger] - Unhandled error: RuntimeError('Cannot close a running event loop')
 [2023-10-14 17:53:06,909] [CRITICAL] [core.logger] - Unhandled error: AttributeError("'Application' object has no attribute 'start_polling'")
+[2023-10-14 18:20:42,337] [ERROR] [core.logger] - Error processing RSS URL https://machinelearningmastery.com/blog/feed/. Retrying... Error: 'NoneType' object is not subscriptable
+[2023-10-14 18:20:52,613] [ERROR] [core.logger] - Error processing RSS URL https://machinelearningmastery.com/blog/feed/. Retrying... Error: 'NoneType' object is not subscriptable
+[2023-10-14 18:21:02,711] [ERROR] [core.logger] - Error processing RSS URL https://machinelearningmastery.com/blog/feed/. Retrying... Error: 'NoneType' object is not subscriptable

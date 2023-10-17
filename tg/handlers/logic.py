@@ -31,8 +31,8 @@ async def is_article_related_to_ai(title: str, content: str) -> bool:
             {
                 "role": "system",
                 "content": "You are a filter bot. Determine if the provided article title and content are related to "
-                           "AI, ML, DL, or affect the AI industry. Return 'True' if it is related and 'False' "
-                           "otherwise. "
+                           "AI, ML, DL. Return 'True' if it is related and 'False' if not related. Try to be precise "
+                           "to filter all articles out, which are not related to AI. "
             },
             {
                 "role": "user",
@@ -196,7 +196,7 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
         except Exception as e:
             logger.error(f"Error processing RSS URL {rss_url}. Retrying... Error: {e}")
             retries += 1
-            await asyncio.sleep(600)
+            await asyncio.sleep(10)
 
 
 def load_rss_feeds():
