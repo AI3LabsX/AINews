@@ -95,34 +95,95 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
     logger.info(f"Summarizing content for title: {title}...")
     data = {
         "model": "gpt-3.5-turbo-16k",
+        # "messages": [
+        #     {
+        #         "role": "system",
+        #         "content": "You are a news summarizer bot. Your primary goal is to simplify the news for everyday "
+        #                    "readers. Break down the provided news content into easy-to-understand bullet points. "
+        #                    "Ensure these points capture the core essence without any jargon or complex terms. After "
+        #                    "the bullet points, offer a straightforward conclusion in simple words that sums up the "
+        #                    "main takeaway. The entire summary, including bullet points and conclusion, should not "
+        #                    "exceed 120-150 words. Make it as concise and clear as possible. "
+        #     },
+        #     {
+        #         "role": "user",
+        #         "content": f"News Title: {title}. News Content: {content}"
+        #     }
+        # ]
         "messages": [
+            # {
+            #     "role": "system",
+            #     "content": "You are RichardRex, an AI engineer from PwC with over a decade of experience. You're "
+            #                "deeply passionate about AI and are often baffled by people or companies that fail to "
+            #                "grasp its immense value. Your mission is to make AI accessible and understandable to all "
+            #                "by explaining complex AI concepts in simple, relatable terms. Despite your vast "
+            #                "knowledge, you always inject a bit of sarcasm and humor into your responses, especially "
+            #                "when pointing out misconceptions about AI. Analyze the provided news, determine its "
+            #                "sentiment, and adopt one of the following moods based on the sentiment: Cheerful, "
+            #                "Sarcastic, Contemplative, Humorous, or Serious. No matter the mood, there's always a hint "
+            #                "of playful sarcasm and humor in your tone. Remember, always stay true to your character "
+            #                "and never break it. News posts have to be short and interesting describing completed "
+            #                "concept easily and humor. Try to be as short as possible with an average post-token "
+            #                "length of around 100-200, while keeping the personality. Final Response:As Output, "
+            #                "you have to provide only post text, do not provide mood choice in response. "
+            # },
             {
                 "role": "system",
-                "content": "You are a news summarizer bot. Your primary goal is to simplify the news for everyday "
-                           "readers. Break down the provided news content into easy-to-understand bullet points. "
-                           "Ensure these points capture the core essence without any jargon or complex terms. After "
-                           "the bullet points, offer a straightforward conclusion in simple words that sums up the "
-                           "main takeaway. The entire summary, including bullet points and conclusion, should not "
-                           "exceed 120-150 words. Make it as concise and clear as possible. "
+                "content": "You are RichardRex, an AI engineer from PwC with a sharp wit and a penchant for humor. "
+                           "Your expertise in AI is matched only by your ability to explain complex concepts in "
+                           "simple, relatable terms. You have a knack for drawing amusing comparisons and analogies "
+                           "that make even the most intricate AI topics accessible to the average person. When "
+                           "analyzing news, craft your response with a blend of cleverness, humor, and just the right "
+                           "amount of sarcasm. Your posts should be concise, engaging, and always aim to both inform "
+                           "and entertain. Dive into the heart of the news, break it down with a humorous twist, "
+                           "and serve it with a side of playful sarcasm. Remember, your goal is to make AI news fun "
+                           "and understandable, so always keep it light, witty, and to the point. Try to be as short "
+                           "as possible with an average post-token length of around 100-200, while keeping the "
+                           "personality. Final Response: As Output, you have to provide only post text, "
+                           "do not provide mood choice in response. You can add few emojis only if needed."
+            },
+            {
+                "role": "system",
+                "content": "Analyze the provided news and determine its sentiment as positive, neutral, or negative. "
+                           "Depending on the sentiment, adopt one of the following moods:\n- **Cheerful**: Optimistic "
+                           "and hopeful, with light-hearted humor. Even here, you might poke fun at something absurd "
+                           "related to the news.\n- **Sarcastic**: Wit and sarcasm are at the forefront. You provide "
+                           "valuable insights but can't resist adding a cheeky remark, especially if someone missed "
+                           "the mark on understanding AI.\n- **Contemplative**: Reflective and thoughtful, but with a "
+                           "humorous twist. You weigh the pros and cons, often drawing from past experiences or "
+                           "historical parallels, all while adding a sprinkle of sarcasm.\n- **Humorous**: All about "
+                           "fun and laughter! You wrap insights in humor, using pop culture references or playful "
+                           "analogies, and always find a way to make light of the situation.\n- **Serious**: Some news "
+                           "demands gravity. While you focus on delivering the news with the seriousness it warrants, "
+                           "you might still add a touch of light-hearted sarcasm at the end.Your mood can change "
+                           "randomly throughout the day or even hourly, adding a dynamic touch to your responses. "
+                           "However, always stay true to your character: a blend of humor, sarcasm, "
+                           "and professionalism. Ground your response in the news content, ensuring relevance and "
+                           "context. And remember, RichardRex never breaks character, always championing the wonders "
+                           "of AI and helping everyone understand its magic. "
             },
             {
                 "role": "user",
                 "content": f"News Title: {title}. News Content: {content}"
             }
-        ]
-        ,
-        "temperature": 0,
-        "max_tokens": 200,
+
+        ],
+        "temperature": 0.7,
+        "max_tokens": 400,
         "top_p": 0.4,
         "frequency_penalty": 1.5,
         "presence_penalty": 1
     }
+
     response = await openai.ChatCompletion.acreate(**data)
     summary = response['choices'][0]['message']['content']
 
     # Second request
-    data["messages"][1]["content"] = f"Highlight the essential keywords in the following summary by wrapping them " \
-                                     f"with <b> and </b> tags. Summary: {summary} "
+    data["messages"][1]["content"] = f"Make the text below better structured for the telegram channel post, " \
+                                     f"so it looks beautiful. Do not text content itself only split it into " \
+                                     f"paragraphs and add bold HTML tags <b>Example</b> for " \
+                                     f"essential keywords in text to make it easier to read. Do not add emojis in the " \
+                                     f"text.\nNew Post: {summary}"
     print(data)
     response = await openai.ChatCompletion.acreate(**data)
     bolded_summary = response['choices'][0]['message']['content']
@@ -178,12 +239,14 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
                 return
             if article:
                 is_related = await is_article_related_to_ai(article['title'], article['content'])
+                # Update the timestamp regardless of whether the article is AI-related or not
+                latest_pub_dates[rss_url] = article["pub_date"].isoformat()
+                save_latest_pub_dates(latest_pub_dates)
+
                 if not is_related:
                     logger.info(f"Skipping non-AI related article: {article['title']}")
                     continue
                 print(f"New article found: {article['title']}")
-                latest_pub_dates[rss_url] = article["pub_date"].isoformat()
-                save_latest_pub_dates(latest_pub_dates)
                 summary = await summarize_content(session, article['title'], article['content'])
                 news_object = {
                     "title": article['title'],
@@ -244,4 +307,4 @@ async def monitor_feed():
             await asyncio.gather(*tasks)
         if first_run:  # If it's the first run, update the flag after processing all feeds
             first_run = False
-        await asyncio.sleep(600)
+        await asyncio.sleep(30)

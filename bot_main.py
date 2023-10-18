@@ -11,7 +11,6 @@ from tg.handlers import HANDLERS
 from tg.handlers.errors import error_handler
 from tg.handlers.logic import monitor_feed
 
-
 TELEGRAM_TOKEN = os.environ.get('BOT_TOKEN')
 
 stop_event = threading.Event()  # Use a threading.Event to signal when to stop the bot
@@ -33,6 +32,7 @@ def start_bot_in_thread():
     register_all_handlers(application=application)
     loop.run_until_complete(application.run_polling(drop_pending_updates=True))  # Use the new event loop to run the bot
     stop_event.set()  # Signal the main thread to stop when the bot stops
+
 
 async def on_startup(application: Application) -> None:
     await set_default_commands(application=application)

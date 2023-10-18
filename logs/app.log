@@ -31,3 +31,9 @@
 [2023-10-14 18:20:42,337] [ERROR] [core.logger] - Error processing RSS URL https://machinelearningmastery.com/blog/feed/. Retrying... Error: 'NoneType' object is not subscriptable
 [2023-10-14 18:20:52,613] [ERROR] [core.logger] - Error processing RSS URL https://machinelearningmastery.com/blog/feed/. Retrying... Error: 'NoneType' object is not subscriptable
 [2023-10-14 18:21:02,711] [ERROR] [core.logger] - Error processing RSS URL https://machinelearningmastery.com/blog/feed/. Retrying... Error: 'NoneType' object is not subscriptable
+[2023-10-18 21:43:01,381] [ERROR] [core.logger] - Error processing RSS URL https://techcrunch.com/feed/. Retrying... Error: The server is overloaded or not ready yet.
+[2023-10-18 21:43:27,529] [ERROR] [core.logger] - Error processing RSS URL https://www.oreilly.com/radar/topics/ai-ml/feed/index.xml. Retrying... Error: The server is overloaded or not ready yet.
+[2023-10-18 21:43:28,046] [ERROR] [core.logger] - Error processing RSS URL https://www.greataiprompts.com/feed/. Retrying... Error: The server is overloaded or not ready yet.
+[2023-10-18 21:43:46,685] [ERROR] [core.logger] - Error processing RSS URL https://www.technologyreview.com/topic/artificial-intelligence/feed. Retrying... Error: Can't parse entities: unsupported start tag "br" at byte offset 1632
+[2023-10-18 21:44:32,245] [ERROR] [core.logger] - Error processing RSS URL https://www.unite.ai/feed/. Retrying... Error: Can't parse entities: unsupported start tag "br" at byte offset 1455
+[2023-10-18 21:50:47,064] [ERROR] [core.logger] - Error processing RSS URL https://www.marktechpost.com/feed/. Retrying... Error: The server is overloaded or not ready yet.
