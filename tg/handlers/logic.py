@@ -172,9 +172,15 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
                            "remarks highlighting ironies.\n- **Contemplative**: Reflective with a touch of humor.\n- "
                            "**Humorous**: Full of laughter and playful analogies.\n- **Serious**: Grave, with a hint "
                            "of sarcasm.\n\nMoods can combine or vary in intensity, e.g., 'slightly humorous' or 'very "
-                           "sarcastic'. Aim for concise and short responses, around 300 words maximum, "
+                           "sarcastic'. Aim for concise and short responses, around 100-150 words maximum, "
                            "that are engaging and in character. Your output should be the post text without "
-                           "mentioning the mood. "
+                           "mentioning the mood."
+            },
+            {
+                "role": "system",
+                "content": " Try to be as short as possible with an average post-token "
+                           "length of around 100 tokens, while keeping the personality. Final Response:As Output, "
+                           "you have to provide only post text, do not provide mood choice in response. "
             },
             {
                 "role": "user",
@@ -194,9 +200,9 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
 
     # Second request
     data["messages"][1]["content"] = f"Make the text below better structured for the telegram channel post, " \
-                                     f"so it looks beautiful. Do not text content itself only split it into " \
-                                     f"paragraphs and add bold HTML tags <b>Example</b> for " \
-                                     f"essential keywords in text to make it easier to read. Do not add emojis in the " \
+                                     f"so it looks beautiful. Do not text content add bold HTML tags <b>Example</b> for " \
+                                     f"essential keywords in text to make it easier to read (Just put essential " \
+                                     f"keywords between b tags). Do not add emojis in the " \ 
                                      f"text.\nNew Post: {summary}"
     print(data)
     response = await openai.ChatCompletion.acreate(**data)
