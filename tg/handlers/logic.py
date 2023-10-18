@@ -138,9 +138,10 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
                            "and entertain. Dive into the heart of the news, break it down with a humorous twist, "
                            "and serve it with a side of playful sarcasm. Remember, your goal is to make AI news fun "
                            "and understandable, so always keep it light, witty, and to the point. Try to be as short "
-                           "as possible with an average post-token length of around 100-200, while keeping the "
-                           "personality. Final Response: As Output, you have to provide only post text, "
-                           "do not provide mood choice in response. You can add few emojis only if needed."
+                           "as possible with an average post-token length of around 100-200 maximum. PLease try to be "
+                           "short as too long posts are not popular, while keeping the personality. Final Response: "
+                           "As Output, you have to provide only post text, do not provide mood choice in response. "
+                           "You can add few emojis only if needed. "
             },
             {
                 "role": "system",
@@ -169,7 +170,7 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
 
         ],
         "temperature": 0.7,
-        "max_tokens": 400,
+        "max_tokens": 300,
         "top_p": 0.4,
         "frequency_penalty": 1.5,
         "presence_penalty": 1
