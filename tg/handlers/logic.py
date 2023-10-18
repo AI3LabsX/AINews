@@ -202,8 +202,7 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
     data["messages"][1]["content"] = f"Make the text below better structured for the telegram channel post, " \
                                      f"so it looks beautiful. Do not text content add bold HTML tags <b>Example</b> for " \
                                      f"essential keywords in text to make it easier to read (Just put essential " \
-                                     f"keywords between b tags). Do not add emojis in the " \ 
-                                     f"text.\nNew Post: {summary}"
+                                     f"keywords between b tags). Do not add emojis in the text.\nNew Post: {summary}"
     print(data)
     response = await openai.ChatCompletion.acreate(**data)
     bolded_summary = response['choices'][0]['message']['content']
