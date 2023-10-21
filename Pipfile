@@ -16,6 +16,8 @@ langchain = "*"
 playwright = "*"
 aiogram = "*"
 python-telegram-bot = {version = "*", extras = ["rate-limiter"]}
+psycopg2 = "*"
+sqlalchemy = "*"
 
 [dev-packages]
 
