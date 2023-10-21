@@ -1,5 +1,6 @@
 # Initialize OpenAI
 import asyncio
+import datetime
 import json
 import os
 from typing import Dict, Optional, Any
@@ -162,7 +163,13 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
 
 
 def parse_pub_date(pub_date_str: str) -> parser:
-    return parser.parse(pub_date_str)
+    if isinstance(pub_date_str, str):
+        return parser.parse(pub_date_str)
+    elif isinstance(pub_date_str, datetime.datetime):
+        return pub_date_str
+    else:
+        raise ValueError(f"Unexpected type for pub_date_str: {type(pub_date_str)}")
+
 
 
 async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, latest_pub_date, first_run=False) -> \
