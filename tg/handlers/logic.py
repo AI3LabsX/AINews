@@ -8,6 +8,7 @@ from typing import Dict, Optional, Any
 import feedparser
 import openai
 import psycopg2
+import pytz
 import requests
 import tiktoken
 from aiohttp import ClientSession
@@ -164,12 +165,18 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
 
 def parse_pub_date(pub_date_str: str) -> parser:
     if isinstance(pub_date_str, str):
-        return parser.parse(pub_date_str)
+        parsed_date = parser.parse(pub_date_str)
+        # Ensure the parsed date is timezone-aware
+        if parsed_date.tzinfo is None or parsed_date.tzinfo.utcoffset(parsed_date) is None:
+            parsed_date = pytz.utc.localize(parsed_date)
+        return parsed_date
     elif isinstance(pub_date_str, datetime.datetime):
+        # Ensure the datetime object is timezone-aware
+        if pub_date_str.tzinfo is None or pub_date_str.tzinfo.utcoffset(pub_date_str) is None:
+            pub_date_str = pytz.utc.localize(pub_date_str)
         return pub_date_str
     else:
         raise ValueError(f"Unexpected type for pub_date_str: {type(pub_date_str)}")
-
 
 
 async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, latest_pub_date, first_run=False) -> \
@@ -179,7 +186,13 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
     articles = []
     for entry in feed.entries:
         pub_date = parse_pub_date(entry.published)
-        if latest_pub_date and pub_date <= parse_pub_date(latest_pub_date):  # Parse the string into datetime
+        # Ensure latest_pub_date is timezone-aware before comparing
+        if latest_pub_date:
+            if isinstance(latest_pub_date, str):
+                latest_pub_date = parse_pub_date(latest_pub_date)
+            elif latest_pub_date.tzinfo is None or latest_pub_date.tzinfo.utcoffset(latest_pub_date) is None:
+                latest_pub_date = pytz.utc.localize(latest_pub_date)
+        if latest_pub_date and pub_date <= latest_pub_date:
             continue
         title = entry.title
         link = entry.link
