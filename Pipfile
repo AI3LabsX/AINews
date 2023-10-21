@@ -4,20 +4,20 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-requests = "*"
-bs4 = "*"
-tiktoken = "*"
-openai = "*"
-environs = "*"
-feedparser = "*"
-python-dateutil = "*"
-selenium = "*"
-langchain = "*"
-playwright = "*"
-aiogram = "*"
-python-telegram-bot = {version = "*", extras = ["rate-limiter"]}
-psycopg2 = "*"
-sqlalchemy = "*"
+requests = "==2.31.0"
+bs4 = "==0.0.1"
+tiktoken = "==0.5.1"
+openai = "==0.28.1"
+environs = "==9.5.0"
+feedparser = "==6.0.10"
+python-dateutil = "==2.8.2"
+selenium = "==4.14.0"
+langchain = "==0.0.319"
+playwright = "==1.39.0"
+aiogram = "==3.1.1"
+python-telegram-bot = {version = "==20.6", extras = ["rate-limiter"]}
+psycopg2 = "==2.9.9"
+sqlalchemy = "==2.0.22"
 
 [dev-packages]
 
