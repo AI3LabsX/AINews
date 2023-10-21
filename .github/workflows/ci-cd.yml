@@ -10,25 +10,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: 3.11
 
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
+
+      - name: Set Python version for Pipenv
+        run: pipenv --python $(python --version)
 
       - name: Install dependencies
         run: |
           pip install pipenv
           pipenv install --deploy --ignore-pipfile --python $(python --version)
-      
-
-      - name: Set Python version for Pipenv
-        run: pipenv --python $(python --version)
+  
+  
 
   deploy:
     needs: build
