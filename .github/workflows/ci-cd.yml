@@ -25,7 +25,6 @@ jobs:
           pipenv install --deploy --ignore-pipfile --python $(python --version)
   
   
-  
 
   deploy:
     needs: build
