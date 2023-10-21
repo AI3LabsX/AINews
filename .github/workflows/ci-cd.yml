@@ -27,12 +27,13 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ hashFiles('**/Pipfile.lock') }}
+          key: pip-v2-${{ runner.os }}-${{ hashFiles('**/Pipfile.lock') }}
+
 
       - name: Install dependencies
         run: |
           pip install pipenv
-          pipenv install --deploy --python $(python --version)
+          pipenv install
 
   deploy:
     needs: build
