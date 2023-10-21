@@ -24,7 +24,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pipenv
-          pipenv install --deploy --ignore-pipfile
+          pipenv install --deploy --ignore-pipfile --python $(python --version)
+      
 
       - name: Set Python version for Pipenv
         run: pipenv --python $(python --version)
