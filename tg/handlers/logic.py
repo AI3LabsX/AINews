@@ -35,13 +35,22 @@ def init_db():
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS latest_articles (
                 rss_url TEXT PRIMARY KEY,
-                pub_date TIMESTAMP
+                pub_date TIMESTAMP,
+                title TEXT
             );
         """)
     conn.commit()
 
 
 init_db()
+
+
+def is_article_processed(title: str) -> bool:
+    """Check if the article with the given title has already been processed."""
+    with conn.cursor() as cursor:
+        cursor.execute("SELECT COUNT(*) FROM latest_articles WHERE title = %s;", (title,))
+        count = cursor.fetchone()[0]
+        return count > 0
 
 
 async def is_article_related_to_ai(title: str, content: str) -> bool:
@@ -225,13 +234,20 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
             article = await fetch_latest_article_from_rss(session, rss_url, latest_pub_dates.get(rss_url), first_run)
             if first_run:
                 latest_pub_dates[rss_url] = article["pub_date"]
-                save_latest_pub_dates(latest_pub_dates)
+                save_latest_pub_dates(latest_pub_dates, article['title'])
+
                 return
             if article:
+                # Check if the article has already been processed
+                if is_article_processed(article['title']):
+                    logger.info(f"Article {article['title']} has already been processed. Skipping...")
+                    continue
+
                 is_related = await is_article_related_to_ai(article['title'], article['content'])
+
                 # Update the timestamp regardless of whether the article is AI-related or not
                 latest_pub_dates[rss_url] = article["pub_date"].isoformat()
-                save_latest_pub_dates(latest_pub_dates)
+                save_latest_pub_dates(latest_pub_dates, article['title'])
 
                 if not is_related:
                     logger.info(f"Skipping non-AI related article: {article['title']}")
@@ -265,16 +281,16 @@ def load_latest_pub_dates():
         return {row[0]: row[1] for row in rows}
 
 
-def save_latest_pub_dates(latest_pub_dates):
+def save_latest_pub_dates(latest_pub_dates, title=None):
     """Save the latest publication dates to the database."""
     with conn.cursor() as cursor:
         for rss_url, pub_date in latest_pub_dates.items():
             cursor.execute("""
-                INSERT INTO latest_articles (rss_url, pub_date)
-                VALUES (%s, %s)
+                INSERT INTO latest_articles (rss_url, pub_date, title)
+                VALUES (%s, %s, %s)
                 ON CONFLICT (rss_url) DO UPDATE
-                SET pub_date = %s;
-            """, (rss_url, pub_date, pub_date))
+                SET pub_date = %s, title = %s;
+            """, (rss_url, pub_date, title, pub_date, title))
     conn.commit()
 
 
