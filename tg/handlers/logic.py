@@ -194,6 +194,10 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
     feed = feedparser.parse(rss_url)
     articles = []
     for entry in feed.entries:
+        # Check if the 'title' key exists in the entry
+        if 'title' not in entry:
+            logger.error(f"Missing 'title' key in RSS entry for URL: {rss_url}")
+            continue
         pub_date = parse_pub_date(entry.published)
         # Ensure latest_pub_date is timezone-aware before comparing
         if latest_pub_date:
@@ -220,10 +224,23 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
         })
     if first_run:
         if articles:  # Check if articles list is not empty
+            save_article_to_db(rss_url, articles[0])  # Save the latest article to the database
             return {"pub_date": articles[0]["pub_date"].isoformat()}  # Just return the timestamp during the first run
         else:
             return None
     return articles[0] if articles else None
+
+
+def save_article_to_db(rss_url: str, article: Dict[str, Any]):
+    """Save the latest article's title and date to the database."""
+    with conn.cursor() as cursor:
+        cursor.execute("""
+            INSERT INTO latest_articles (rss_url, pub_date, title)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (rss_url) DO UPDATE
+            SET pub_date = %s, title = %s;
+        """, (rss_url, article["pub_date"], article["title"], article["pub_date"], article["title"]))
+    conn.commit()
 
 
 async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates: Dict[str, Any], first_run=False):
@@ -233,15 +250,16 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
         try:
             article = await fetch_latest_article_from_rss(session, rss_url, latest_pub_dates.get(rss_url), first_run)
             if first_run:
-                latest_pub_dates[rss_url] = article["pub_date"]
-                save_latest_pub_dates(latest_pub_dates, article['title'])
-
+                article = await fetch_latest_article_from_rss(session, rss_url, latest_pub_dates.get(rss_url),
+                                                              first_run)
+                if article:
+                    latest_pub_dates[rss_url] = article["pub_date"]
                 return
             if article:
                 # Check if the article has already been processed
                 if is_article_processed(article['title']):
                     logger.info(f"Article {article['title']} has already been processed. Skipping...")
-                    continue
+                    return  # Skip the rest of the processing for this article
 
                 is_related = await is_article_related_to_ai(article['title'], article['content'])
 
