@@ -23,11 +23,14 @@ jobs:
 
       - name: Set Python version for Pipenv
         run: pipenv --python $(python --version)
+      - name: Clear Pipenv cache
+        run: pipenv --clear
+
 
       - name: Install dependencies
         run: |
           pip install pipenv
-          pipenv install --deploy --ignore-pipfile --python $(python --version)
+          pipenv install --deploy --ignore-pipfile --python 3.11
   
   
 
