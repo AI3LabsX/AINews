@@ -200,8 +200,8 @@ def parse_pub_date(pub_date_str: str) -> parser:
         raise ValueError(f"Unexpected type for pub_date_str: {type(pub_date_str)}")
 
 
-async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, latest_pub_date, first_run=False) -> \
-        Optional[Dict[str, Any]]:
+async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, latest_pub_date) -> Optional[
+    Dict[str, Any]]:
     logger.info(f"Fetching latest article from RSS: {rss_url}...")
     feed = feedparser.parse(rss_url)
     articles = []
@@ -234,12 +234,6 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
             "pub_date": pub_date,
             "image": image_url
         })
-    if first_run:
-        if articles:  # Check if articles list is not empty
-            save_article_to_db(rss_url, articles[0])  # Save the latest article to the database
-            return {"pub_date": articles[0]["pub_date"].isoformat()}  # Just return the timestamp during the first run
-        else:
-            return None
     return articles[0] if articles else None
 
 
@@ -257,22 +251,18 @@ def save_article_to_db(rss_url: str, article: Dict[str, Any]):
 
 
 async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates: Dict[str, Any],
-                          titles: Dict[str, str], first_run=False):
+                          titles: Dict[str, str]):
     logger.info(f"Processing RSS URL: {rss_url}...")
     retries = 0
     while retries < RETRY_COUNT:
         try:
-            article = await fetch_latest_article_from_rss(session, rss_url, latest_pub_dates.get(rss_url), first_run)
+            article = await fetch_latest_article_from_rss(session, rss_url, latest_pub_dates.get(rss_url))
 
             if article:
                 # Update the timestamp and title regardless of whether the article is AI-related or not
                 latest_pub_dates[rss_url] = article["pub_date"].isoformat()
                 titles[rss_url] = article["title"]
                 save_latest_pub_dates(latest_pub_dates, titles)  # Save to DB
-
-                if first_run:
-                    logger.info(f"First run: Stored article {article['title']} from {rss_url}")
-                    return
 
                 # Check if the article has already been processed
                 if article['title'] == titles.get(rss_url):
@@ -327,18 +317,39 @@ def save_latest_pub_dates(latest_pub_dates: Dict[str, datetime.datetime], titles
     conn.commit()
 
 
-async def monitor_feed():
+async def store_latest_articles(session: ClientSession, rss_url: str, latest_pub_dates: Dict[str, Any],
+                                titles: Dict[str, str]):
+    """Store the latest articles from the RSS feed in the database."""
+    logger.info(f"Storing latest article from RSS: {rss_url}...")
+    article = await fetch_latest_article_from_rss(session, rss_url, latest_pub_dates.get(rss_url))
+    if article:
+        latest_pub_dates[rss_url] = article["pub_date"].isoformat()
+        titles[rss_url] = article["title"]
+        save_latest_pub_dates(latest_pub_dates, titles)  # Save to DB
+
+
+def initialize_feeds():
+    """Initialize the feeds by storing the latest articles' date and title in the database."""
     init_db()
-    logger.info("Starting to monitor feeds...")
     rss_feeds = load_rss_feeds()
     rss_urls = list(rss_feeds.keys())
     latest_pub_dates = load_latest_pub_dates()
     titles = {}  # Initialize an empty dictionary to store titles
 
-    # Handle first run logic outside the while loop
     async with ClientSession() as session:
-        tasks = [process_rss_url(session, rss_url, latest_pub_dates, titles, first_run=True) for rss_url in rss_urls]
-        await asyncio.gather(*tasks)
+        tasks = [store_latest_articles(session, rss_url, latest_pub_dates, titles) for rss_url in rss_urls]
+        asyncio.run(asyncio.gather(*tasks))
+
+    logger.info("Feeds initialized successfully.")
+
+
+async def monitor_feed():
+    initialize_feeds()
+    logger.info("Starting to monitor feeds...")
+    rss_feeds = load_rss_feeds()
+    rss_urls = list(rss_feeds.keys())
+    latest_pub_dates = load_latest_pub_dates()
+    titles = {}  # Initialize an empty dictionary to store titles
 
     while True:
         updated_rss_feeds = load_rss_feeds()
@@ -354,7 +365,6 @@ async def monitor_feed():
                 if rss_url in latest_pub_dates:
                     del latest_pub_dates[rss_url]
         async with ClientSession() as session:
-            tasks = [process_rss_url(session, rss_url, latest_pub_dates, titles, first_run=False) for rss_url in
-                     rss_urls]
+            tasks = [process_rss_url(session, rss_url, latest_pub_dates, titles) for rss_url in rss_urls]
             await asyncio.gather(*tasks)
         await asyncio.sleep(300)
