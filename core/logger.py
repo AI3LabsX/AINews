@@ -1,25 +1,54 @@
+# core/logger.py
+
 import logging
-import os
 
-# Define the logging level and format
-logging.basicConfig(level=logging.INFO,
-                    format='[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+# Define custom colors for logging levels
+LOG_COLORS = {
+    'DEBUG': 'cyan',
+    'INFO': 'green',
+    'WARNING': 'yellow',
+    'ERROR': 'red',
+    'CRITICAL': 'red,bg_white',
+}
 
-# Create a logger object
+
+class ColoredFormatter(logging.Formatter):
+    """Custom formatter to add colors to logging levels."""
+
+    COLORS = {
+        'green': '\033[0;32m',
+        'yellow': '\033[0;33m',
+        'red': '\033[0;31m',
+        'cyan': '\033[0;36m',
+        'bg_white': '\033[47m',
+        'reset': '\033[0m'
+    }
+
+    def format(self, record):
+        log_color = LOG_COLORS.get(record.levelname, 'reset')
+        color_seq = self.colorize(log_color)
+        record.msg = f"{color_seq}{record.msg}{self.COLORS['reset']}"
+        return super().format(record)
+
+    def colorize(self, log_color):
+        colors = log_color.split(',')
+        color_seq = ''
+        for color in colors:
+            color_seq += self.COLORS[color]
+        return color_seq
+
+
+# Create logger
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
-# Create a file handler for logging
-log_directory = "logs"
-if not os.path.exists(log_directory):
-    os.makedirs(log_directory)
+# Create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
 
-file_handler = logging.FileHandler(f"{log_directory}/app.log")
-file_handler.setLevel(logging.ERROR)
+# Create formatter and add it to the handlers
+formatter = ColoredFormatter('%(asctime)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
 
-# Create a logging format for the file handler
-formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s')
-file_handler.setFormatter(formatter)
-
-# Add the file handler to the logger
-logger.addHandler(file_handler)
+# Add the handlers to the logger
+logger.addHandler(ch)

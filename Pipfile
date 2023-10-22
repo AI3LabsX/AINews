@@ -19,9 +19,12 @@ python-telegram-bot = {version = "==20.6", extras = ["rate-limiter"]}
 psycopg2 = "==2.9.9"
 sqlalchemy = "==2.0.22"
 pytz = "*"
-
-[dev-packages]
+flake8 = "==6.1.0"
+flake8-annotations = "==3.0.1"
 
 [requires]
 python_version = "3.11"
 python_full_version = "3.11.6"
+
+[scripts]
+lint = "flake8"

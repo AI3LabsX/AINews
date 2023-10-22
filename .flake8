@@ -1,0 +1,38 @@
+[flake8]
+# General reference: http://flake8.pycqa.org/en/latest/user/options.html
+
+# Specify which warnings should be ignored
+# Reference: https://lintlyci.github.io/Flake8Rules/
+ignore =
+    # Line too long
+    E501
+    # Line break before a binary operator
+    # Either this or W504 must be ignored, as they are
+    # contradictory (504 is newer and PEP-supported)
+    W503
+    # Missing type annotation for *args, **kwargs (respectively)
+    ANN002, ANN003
+    # Missing type annotation for self, cls (respectively)
+    ANN101, ANN102
+    # Dynamically typed expressions (typing.Any) are disallowed
+    ANN401
+    # Trailing whitespace
+    W291
+
+# Specify which directories should be ignored
+exclude =
+    pycache
+    .github/
+    experiment/
+    core/logger.py
+
+# Print report at the end
+statistics = True
+
+# Only relevant for import-order plugin
+import-order-style = pycharm
+application_import_names =
+    core
+    logs
+    bot_main
+    tg

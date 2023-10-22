@@ -6,10 +6,13 @@ on:
       - master
     paths-ignore:
       - '**.md'  # This is optional. It ignores changes to markdown files.
+  push:
+    branches:
+      - master
 
 jobs:
   build:
-    if: github.head_ref == 'dev'
+    if: github.event_name == 'pull_request' && github.head_ref == 'dev'
     runs-on: ubuntu-latest
 
     steps:
@@ -38,18 +41,23 @@ jobs:
           pip install pipenv
           pipenv install
 
-#  deploy:
-#    needs: build
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v2
-#
-#      - name: Deploy to Heroku
-#        uses: akhileshns/heroku-deploy@v3.5.7
-#        with:
-#          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-#          heroku_app_name: "ai3labsnews"
-#          heroku_email: "riharex420@gmail.com"
-#          branch: master
+      - name: Python Lint
+        run: |
+          pipenv run lint
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to Heroku
+        uses: akhileshns/heroku-deploy@v3.5.7
+        with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: "ai3labsnews"
+          heroku_email: "riharex420@gmail.com"
+          branch: master

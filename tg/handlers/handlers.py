@@ -20,10 +20,10 @@ async def button(update: Update, context: CallbackContext) -> None:
             json.dump(feeds, file)
             await query.edit_message_text(text=f"Deleted RSS feed: {rss_url}")
         else:
-            await query.edit_message_text(text=f"RSS feed not found!")
+            await query.edit_message_text(text="RSS feed not found!")
 
 
-async def add(update: Update, context: CallbackContext):
+async def add(update: Update, context: CallbackContext) -> None:
     # Assuming the format is /add name url
     if len(context.args) != 2:
         await update.message.reply_text("Usage: /add name url")
@@ -44,7 +44,7 @@ async def add(update: Update, context: CallbackContext):
     #         await process_rss_url(session, url, latest_pub_dates)
 
 
-async def delete(update, context):
+async def delete(update: Update, context: CallbackContext) -> None:
     with open(PROJECT_ROOT.joinpath("rss_feeds.json"), "r") as file:
         feeds = json.load(file)
 

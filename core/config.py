@@ -8,8 +8,3 @@ DEBUG: bool = True
 _BASE_DIR: Path = Path(__file__).resolve().parent.parent
 ENV_FILE: str = normpath(join(_BASE_DIR, ".env"))
 LOG_FILE: str = normpath(join(_BASE_DIR, "utils.log"))
-
-
-
-
-

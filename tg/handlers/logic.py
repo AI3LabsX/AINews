@@ -29,7 +29,7 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 
-def init_db():
+def init_db() -> None:
     """Initialize the database and create the table if it doesn't exist."""
     with conn.cursor() as cursor:
         cursor.execute("""
@@ -113,7 +113,7 @@ def extract_largest_text_block(soup: BeautifulSoup) -> str:
     return largest_block.strip()
 
 
-async def send_to_telegram(news_object: Dict[str, str]):
+async def send_to_telegram(news_object: Dict[str, str]) -> None:
     logger.info(f"Sending news: {news_object['title']} to Telegram...")
     bot = Bot(token=TELEGRAM_TOKEN)
     sanitized_summary = news_object['summary'].replace("<the>", "").replace("</the>", "")
@@ -179,7 +179,6 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
 
     response = await openai.ChatCompletion.acreate(**data)
     bolded_summary = response['choices'][0]['message']['content']
-    print(bolded_summary)
     return bolded_summary
 
 
@@ -204,8 +203,7 @@ def article_exists_in_db(title: str) -> bool:
         return count > 0
 
 
-async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, latest_pub_date) -> Optional[
-    Dict[str, Any]]:
+async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, latest_pub_date: str) -> Optional[Dict[str, Any]]:
     logger.info(f"Fetching latest article from RSS: {rss_url}...")
     feed = feedparser.parse(rss_url)
     articles = []
@@ -214,7 +212,7 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
             logger.error(f"Missing 'title' key in RSS entry for URL: {rss_url}")
             continue
         pub_date = parse_pub_date(entry.published)
-        logger.info(f"Debugging: Parsed pub_date: {pub_date}")
+        logger.info(f"Debugging: Parsed pub_date: {pub_date} for RSS: {rss_url}")
 
         # Ensure latest_pub_date is in UTC before comparing
         if latest_pub_date:
@@ -223,11 +221,11 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
             # Ensure the latest_pub_date is timezone-aware
             if latest_pub_date.tzinfo is None or latest_pub_date.tzinfo.utcoffset(latest_pub_date) is None:
                 latest_pub_date = pytz.utc.localize(latest_pub_date)
-        logger.info(f"Debugging: Latest pub_date after processing: {latest_pub_date}")
+        logger.info(f"Debugging: Latest pub_date after processing: {latest_pub_date} for RSS: {rss_url}")
 
         if latest_pub_date and pub_date <= latest_pub_date:
             logger.info(
-                f"Debugging: Skipping article with pub_date {pub_date} as it's older or equal to latest pub_date {latest_pub_date}")
+                f"Debugging: Skipping article with pub_date {pub_date} as it's older or equal to latest pub_date {latest_pub_date} for RSS: {rss_url}")
             continue
         title = entry.title
         link = entry.link
@@ -247,7 +245,7 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
     return articles[0] if articles else None
 
 
-def save_article_to_db(rss_url: str, article: Dict[str, Any]):
+def save_article_to_db(rss_url: str, article: Dict[str, Any]) -> None:
     pub_date_utc = article["pub_date"].astimezone(pytz.utc)
     if not article_exists_in_db(article["title"]):
         with conn.cursor() as cursor:
@@ -264,7 +262,7 @@ def save_article_to_db(rss_url: str, article: Dict[str, Any]):
 
 
 async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates: Dict[str, Any],
-                          titles: Dict[str, str]):
+                          titles: Dict[str, str]) -> None:
     logger.info(f"Processing RSS URL: {rss_url}...")
     retries = 0
     while retries < RETRY_COUNT:
@@ -278,13 +276,13 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
 
             # Check if the article has already been processed
             if article_exists_in_db(article['title']):
-                logger.info(f"Article {article['title']} has already been processed. Skipping...")
+                logger.info(f"Article {article['title']} has already been processed for RSS: {rss_url}. Skipping...")
                 return  # Skip the rest of the processing for this article
 
             is_related = await is_article_related_to_ai(article['title'], article['content'])
 
             if not is_related:
-                logger.info(f"Skipping non-AI related article: {article['title']}")
+                logger.info(f"Skipping non-AI related article: {article['title']} for RSS: {rss_url}")
                 save_article_to_db(rss_url, article)
                 return
             print(f"New article found: {article['title']}")
@@ -304,12 +302,12 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
             await asyncio.sleep(10)
 
 
-def load_rss_feeds():
+def load_rss_feeds() -> Dict:
     with open(PROJECT_ROOT.joinpath("rss_feeds.json"), "r") as file:
         return json.load(file)
 
 
-def load_latest_pub_dates():
+def load_latest_pub_dates() -> Dict:
     """Load the latest publication dates from the database."""
     with conn.cursor() as cursor:
         cursor.execute("SELECT rss_url, pub_date FROM latest_articles;")
@@ -317,7 +315,7 @@ def load_latest_pub_dates():
         return {row[0]: row[1] for row in rows}
 
 
-def save_latest_pub_dates(latest_pub_dates: Dict[str, datetime.datetime], titles: Dict[str, str]):
+def save_latest_pub_dates(latest_pub_dates: Dict[str, datetime.datetime], titles: Dict[str, str]) -> None:
     """Save the latest publication dates and titles to the database."""
     with conn.cursor() as cursor:
         for rss_url, pub_date in latest_pub_dates.items():
@@ -333,7 +331,7 @@ def save_latest_pub_dates(latest_pub_dates: Dict[str, datetime.datetime], titles
 
 
 async def store_latest_articles(session: ClientSession, rss_url: str, latest_pub_dates: Dict[str, Any],
-                                titles: Dict[str, str]):
+                                titles: Dict[str, str]) -> None:
     """Store the latest articles from the RSS feed in the database."""
     logger.info(f"Storing latest article from RSS: {rss_url}...")
     article = await fetch_latest_article_from_rss(session, rss_url, latest_pub_dates.get(rss_url))
@@ -346,7 +344,7 @@ async def store_latest_articles(session: ClientSession, rss_url: str, latest_pub
         logger.warning(f"No new articles found for RSS: {rss_url}. Skipping database update.")
 
 
-async def initialize_feeds():
+async def initialize_feeds() -> None:
     """Initialize the feeds by storing the latest articles' date and title in the database."""
     init_db()
     rss_feeds = load_rss_feeds()
@@ -361,7 +359,7 @@ async def initialize_feeds():
     logger.info("Feeds initialized successfully.")
 
 
-async def monitor_feed():
+async def monitor_feed() -> None:
     await initialize_feeds()
     logger.info("Starting to monitor feeds...")
     rss_feeds = load_rss_feeds()

@@ -16,7 +16,7 @@ TELEGRAM_TOKEN = os.environ.get('BOT_TOKEN')
 stop_event = threading.Event()  # Use a threading.Event to signal when to stop the bot
 
 
-def start_bot_in_thread():
+def start_bot_in_thread() -> None:
     loop = asyncio.new_event_loop()  # Create a new event loop
     asyncio.set_event_loop(loop)  # Set the new event loop as the default for this thread
 
@@ -43,7 +43,7 @@ def register_all_handlers(application: Application) -> None:
     application.add_error_handler(callback=error_handler)
 
 
-async def main():
+async def main() -> None:
     bot_thread = threading.Thread(target=start_bot_in_thread)
     bot_thread.start()
     await monitor_feed()
