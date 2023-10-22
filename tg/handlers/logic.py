@@ -200,6 +200,14 @@ def parse_pub_date(pub_date_str: str) -> parser:
         raise ValueError(f"Unexpected type for pub_date_str: {type(pub_date_str)}")
 
 
+def article_exists_in_db(title: str) -> bool:
+    """Check if an article exists in the database based on its title."""
+    with conn.cursor() as cursor:
+        cursor.execute("SELECT COUNT(*) FROM latest_articles WHERE title = %s;", (title,))
+        count = cursor.fetchone()[0]
+        return count > 0
+
+
 async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, latest_pub_date) -> Optional[
     Dict[str, Any]]:
     logger.info(f"Fetching latest article from RSS: {rss_url}...")
@@ -239,15 +247,18 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
 
 def save_article_to_db(rss_url: str, article: Dict[str, Any]):
     """Save the latest article's title and date to the database."""
-    with conn.cursor() as cursor:
-        cursor.execute("""
-            INSERT INTO latest_articles (rss_url, pub_date, title)
-            VALUES (%s, %s, %s)
-            ON CONFLICT (rss_url) DO UPDATE
-            SET pub_date = %s, title = %s;
-        """, (rss_url, article["pub_date"], article["title"], article["pub_date"], article["title"]))
-    conn.commit()
-    logger.info(f"Saved article '{article['title']}' with date '{article['pub_date']}' to the database.")
+    if not article_exists_in_db(article["title"]):
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO latest_articles (rss_url, pub_date, title)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (rss_url) DO UPDATE
+                SET pub_date = %s, title = %s;
+            """, (rss_url, article["pub_date"], article["title"], article["pub_date"], article["title"]))
+        conn.commit()
+        logger.info(f"Saved article '{article['title']}' with date '{article['pub_date']}' to the database.")
+    else:
+        logger.info(f"Article '{article['title']}' already exists in the database. Skipping...")
 
 
 async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates: Dict[str, Any],
@@ -258,31 +269,31 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
         try:
             article = await fetch_latest_article_from_rss(session, rss_url, latest_pub_dates.get(rss_url))
 
-            if article:
-                # Update the timestamp and title regardless of whether the article is AI-related or not
-                latest_pub_dates[rss_url] = article["pub_date"].isoformat()
-                titles[rss_url] = article["title"]
-                save_latest_pub_dates(latest_pub_dates, titles)  # Save to DB
+            # Check if the article is not None
+            if not article:
+                logger.info(f"No new articles found for RSS URL: {rss_url}. Skipping...")
+                return
 
-                # Check if the article has already been processed
-                if article['title'] == titles.get(rss_url):
-                    logger.info(f"Article {article['title']} has already been processed. Skipping...")
-                    return  # Skip the rest of the processing for this article
+            # Check if the article has already been processed
+            if article_exists_in_db(article['title']):
+                logger.info(f"Article {article['title']} has already been processed. Skipping...")
+                return  # Skip the rest of the processing for this article
 
-                is_related = await is_article_related_to_ai(article['title'], article['content'])
+            is_related = await is_article_related_to_ai(article['title'], article['content'])
 
-                if not is_related:
-                    logger.info(f"Skipping non-AI related article: {article['title']}")
-                    continue
-                print(f"New article found: {article['title']}")
-                summary = await summarize_content(session, article['title'], article['content'])
-                news_object = {
-                    "title": article['title'],
-                    "url": article['link'],
-                    "image": article['image'],
-                    "summary": summary
-                }
-                await send_to_telegram(news_object)
+            if not is_related:
+                logger.info(f"Skipping non-AI related article: {article['title']}")
+                continue
+            print(f"New article found: {article['title']}")
+            summary = await summarize_content(session, article['title'], article['content'])
+            news_object = {
+                "title": article['title'],
+                "url": article['link'],
+                "image": article['image'],
+                "summary": summary
+            }
+            await send_to_telegram(news_object)
+            save_article_to_db(rss_url, article)  # Save to DB
             break
         except Exception as e:
             logger.error(f"Error processing RSS URL {rss_url}. Retrying... Error: {e}")
@@ -355,16 +366,7 @@ async def monitor_feed():
     while True:
         updated_rss_feeds = load_rss_feeds()
         updated_rss_urls = list(updated_rss_feeds.keys())
-        for rss_url in updated_rss_urls:
-            if rss_url not in rss_urls:
-                rss_urls.append(rss_url)
-                if rss_url not in latest_pub_dates:
-                    latest_pub_dates[rss_url] = None
-        for rss_url in rss_urls:
-            if rss_url not in updated_rss_urls:
-                rss_urls.remove(rss_url)
-                if rss_url in latest_pub_dates:
-                    del latest_pub_dates[rss_url]
+        rss_urls = [url for url in updated_rss_urls if url not in rss_urls] + rss_urls
         async with ClientSession() as session:
             tasks = [process_rss_url(session, rss_url, latest_pub_dates, titles) for rss_url in rss_urls]
             await asyncio.gather(*tasks)
