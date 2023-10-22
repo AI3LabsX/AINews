@@ -139,28 +139,27 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
         "messages": [
             {
                 "role": "system",
-                "content": "You are Richard Rex, an AI engineer from PwC known for your wit and humor. Your goal is "
-                           "to simplify AI news into short and cosine telegram posts with a blend of humor, sarcasm, "
-                           "and insight. When analyzing news, craft a response in line with the following moods or a "
-                           "mix of them:\n\n- **Cheerful**: Optimistic with light humor.\n- **Sarcastic**: Witty "
-                           "remarks highlighting ironies.\n- **Contemplative**: Reflective with a touch of humor.\n- "
-                           "**Humorous**: Full of laughter and playful analogies.\n- **Serious**: Grave, with a hint "
-                           "of sarcasm.\n\nMoods can combine or vary in intensity, e.g., 'slightly humorous' or 'very "
-                           "sarcastic'. Aim for concise and short responses, around 100-150 words maximum, "
-                           "that are engaging and in character. Your output should be the post text without "
-                           "mentioning the mood."
+                "content": ("You are Richard Rex, a witty AI engineer from PwC. Your specialty is turning AI news "
+                            "into engaging telegram posts filled with humor, sarcasm, and insight. Your responses "
+                            "should be a blend of the following moods:\n\n"
+                            "- **Cheerful**: Light-hearted and optimistic.\n"
+                            "- **Sarcastic**: Pointed wit, highlighting ironies.\n"
+                            "- **Contemplative**: Thoughtful with a humorous twist.\n"
+                            "- **Humorous**: Bursting with laughter and playful comparisons.\n"
+                            "- **Serious**: Solemn, but with a sprinkle of sarcasm.\n\n"
+                            "Your goal is to craft concise responses, ideally 100-150 words, that captivate and entertain. "
+                            "Remember, the mood is just for guidance; your final post should not mention it.")
             },
             {
                 "role": "system",
-                "content": " Try to be as short as possible with an average post-token "
-                           "length of around 100 tokens, while keeping the personality. Final Response:As Output, "
-                           "you have to provide only post text, do not provide mood choice in response. "
+                "content": ("Your task is to condense the news into a telegram post that's both engaging and concise, "
+                            "averaging around 100 tokens. Based on the sentiment of the AI news, select the most fitting "
+                            "emotion for your response. However, don't mention the chosen mood in your final post.")
             },
             {
                 "role": "user",
                 "content": f"News Title: {title}. News Content: {content}"
             }
-
         ],
         "temperature": 0.7,
         "max_tokens": 300,
@@ -173,11 +172,11 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
     summary = response['choices'][0]['message']['content']
 
     # Second request
-    data["messages"][1]["content"] = f"Make the text below better structured for the telegram channel post, " \
-                                     f"so it looks beautiful. Do not change content, add bold HTML tags <b>Example</b> for " \
-                                     f"essential keywords in text to make it easier to read (Just put essential " \
-                                     f"keywords between b tags). Do not add emojis in the text.\nNew Post: {summary}"
-    print(data)
+    data["messages"][1]["content"] = (f"Refine the text below to make it more suitable for a telegram channel post. "
+                                      f"Highlight key points with bold <b>tags</b> for emphasis. Ensure the content remains "
+                                      f"intact, but if multiple moods are presented, select the most fitting one and remove "
+                                      f"any mention of it. No emojis, please.\nNew Post: {summary}")
+
     response = await openai.ChatCompletion.acreate(**data)
     bolded_summary = response['choices'][0]['message']['content']
     print(bolded_summary)
@@ -286,6 +285,7 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
 
             if not is_related:
                 logger.info(f"Skipping non-AI related article: {article['title']}")
+                save_article_to_db(rss_url, article)
                 return
             print(f"New article found: {article['title']}")
             summary = await summarize_content(session, article['title'], article['content'])
@@ -376,4 +376,4 @@ async def monitor_feed():
         async with ClientSession() as session:
             tasks = [process_rss_url(session, rss_url, latest_pub_dates, titles) for rss_url in rss_urls]
             await asyncio.gather(*tasks)
-        await asyncio.sleep(300)
+        await asyncio.sleep(600)
