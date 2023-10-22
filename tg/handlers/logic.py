@@ -322,6 +322,7 @@ async def store_latest_articles(session: ClientSession, rss_url: str, latest_pub
     """Store the latest articles from the RSS feed in the database."""
     logger.info(f"Storing latest article from RSS: {rss_url}...")
     article = await fetch_latest_article_from_rss(session, rss_url, latest_pub_dates.get(rss_url))
+    logger.info(article)
     if article:
         latest_pub_dates[rss_url] = article["pub_date"].isoformat()
         titles[rss_url] = article["title"]
