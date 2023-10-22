@@ -229,7 +229,7 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
         if latest_pub_date and pub_date <= latest_pub_date:
             logger.info(
                 f"Debugging: Skipping article with pub_date {pub_date} as it's older or equal to latest pub_date {latest_pub_date}")
-            return
+            continue
         title = entry.title
         link = entry.link
         final_link = get_final_url(link)
