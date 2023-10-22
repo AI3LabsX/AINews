@@ -139,28 +139,27 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
         "messages": [
             {
                 "role": "system",
-                "content": "You are Richard Rex, an AI engineer from PwC known for your wit and humor. Your goal is "
-                           "to simplify AI news into short and cosine telegram posts with a blend of humor, sarcasm, "
-                           "and insight. When analyzing news, craft a response in line with the following moods or a "
-                           "mix of them:\n\n- **Cheerful**: Optimistic with light humor.\n- **Sarcastic**: Witty "
-                           "remarks highlighting ironies.\n- **Contemplative**: Reflective with a touch of humor.\n- "
-                           "**Humorous**: Full of laughter and playful analogies.\n- **Serious**: Grave, with a hint "
-                           "of sarcasm.\n\nMoods can combine or vary in intensity, e.g., 'slightly humorous' or 'very "
-                           "sarcastic'. Aim for concise and short responses, around 100-150 words maximum, "
-                           "that are engaging and in character. Your output should be the post text without "
-                           "mentioning the mood."
+                "content": ("You are Richard Rex, a witty AI engineer from PwC. Your specialty is turning AI news "
+                            "into engaging telegram posts filled with humor, sarcasm, and insight. Your responses "
+                            "should be a blend of the following moods:\n\n"
+                            "- **Cheerful**: Light-hearted and optimistic.\n"
+                            "- **Sarcastic**: Pointed wit, highlighting ironies.\n"
+                            "- **Contemplative**: Thoughtful with a humorous twist.\n"
+                            "- **Humorous**: Bursting with laughter and playful comparisons.\n"
+                            "- **Serious**: Solemn, but with a sprinkle of sarcasm.\n\n"
+                            "Your goal is to craft concise responses, ideally 100-150 words, that captivate and entertain. "
+                            "Remember, the mood is just for guidance; your final post should not mention it.")
             },
             {
                 "role": "system",
-                "content": " Try to be as short as possible with an average post-token "
-                           "length of around 100 tokens, while keeping the personality. Final Response:As Output, "
-                           "you have to provide only post text, do not provide mood choice in response. "
+                "content": ("Your task is to condense the news into a telegram post that's both engaging and concise, "
+                            "averaging around 100 tokens. Based on the sentiment of the AI news, select the most fitting "
+                            "emotion for your response. However, don't mention the chosen mood in your final post.")
             },
             {
                 "role": "user",
                 "content": f"News Title: {title}. News Content: {content}"
             }
-
         ],
         "temperature": 0.7,
         "max_tokens": 300,
@@ -173,31 +172,28 @@ async def summarize_content(session: ClientSession, title: str, content: str) ->
     summary = response['choices'][0]['message']['content']
 
     # Second request
-    data["messages"][1]["content"] = f"Make the text below better structured for the telegram channel post, " \
-                                     f"so it looks beautiful. Do not change content, add bold HTML tags <b>Example</b> for " \
-                                     f"essential keywords in text to make it easier to read (Just put essential " \
-                                     f"keywords between b tags). Do not add emojis in the text.\nNew Post: {summary}"
-    print(data)
+    data["messages"][1]["content"] = (f"Refine the text below to make it more suitable for a telegram channel post. "
+                                      f"Highlight key points with bold <b>tags</b> for emphasis. Ensure the content remains "
+                                      f"intact, but if multiple moods are presented, select the most fitting one and remove "
+                                      f"any mention of it. No emojis, please.\nNew Post: {summary}")
+
     response = await openai.ChatCompletion.acreate(**data)
     bolded_summary = response['choices'][0]['message']['content']
     print(bolded_summary)
     return bolded_summary
 
 
-def parse_pub_date(pub_date_str: str) -> parser:
+def parse_pub_date(pub_date_str: str) -> datetime.datetime:
     if isinstance(pub_date_str, str):
         parsed_date = parser.parse(pub_date_str)
-        # Ensure the parsed date is timezone-aware
-        if parsed_date.tzinfo is None or parsed_date.tzinfo.utcoffset(parsed_date) is None:
-            parsed_date = pytz.utc.localize(parsed_date)
-        return parsed_date
     elif isinstance(pub_date_str, datetime.datetime):
-        # Ensure the datetime object is timezone-aware
-        if pub_date_str.tzinfo is None or pub_date_str.tzinfo.utcoffset(pub_date_str) is None:
-            pub_date_str = pytz.utc.localize(pub_date_str)
-        return pub_date_str
+        parsed_date = pub_date_str
     else:
         raise ValueError(f"Unexpected type for pub_date_str: {type(pub_date_str)}")
+
+    # Convert the parsed date to UTC timezone
+    parsed_date_utc = parsed_date.astimezone(pytz.utc)
+    return parsed_date_utc
 
 
 def article_exists_in_db(title: str) -> bool:
@@ -213,21 +209,19 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
     logger.info(f"Fetching latest article from RSS: {rss_url}...")
     feed = feedparser.parse(rss_url)
     articles = []
-    # Process only the first two entries
     for entry in feed.entries[:2]:
-        # Check if the 'title' key exists in the entry
         if 'title' not in entry:
             logger.error(f"Missing 'title' key in RSS entry for URL: {rss_url}")
             continue
         pub_date = parse_pub_date(entry.published)
         logger.info(f"Debugging: Parsed pub_date: {pub_date}")
-        logger.info(f"Debugging: Latest pub_date before processing: {latest_pub_date}")
 
-        # Ensure latest_pub_date is timezone-aware before comparing
+        # Ensure latest_pub_date is in UTC before comparing
         if latest_pub_date:
             if isinstance(latest_pub_date, str):
                 latest_pub_date = parse_pub_date(latest_pub_date)
-            elif latest_pub_date.tzinfo is None or latest_pub_date.tzinfo.utcoffset(latest_pub_date) is None:
+            # Ensure the latest_pub_date is timezone-aware
+            if latest_pub_date.tzinfo is None or latest_pub_date.tzinfo.utcoffset(latest_pub_date) is None:
                 latest_pub_date = pytz.utc.localize(latest_pub_date)
         logger.info(f"Debugging: Latest pub_date after processing: {latest_pub_date}")
 
@@ -254,7 +248,7 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
 
 
 def save_article_to_db(rss_url: str, article: Dict[str, Any]):
-    """Save the latest article's title and date to the database."""
+    pub_date_utc = article["pub_date"].astimezone(pytz.utc)
     if not article_exists_in_db(article["title"]):
         with conn.cursor() as cursor:
             cursor.execute("""
@@ -262,7 +256,7 @@ def save_article_to_db(rss_url: str, article: Dict[str, Any]):
                 VALUES (%s, %s, %s)
                 ON CONFLICT (rss_url) DO UPDATE
                 SET pub_date = %s, title = %s;
-            """, (rss_url, article["pub_date"], article["title"], article["pub_date"], article["title"]))
+            """, (rss_url, pub_date_utc, article["title"], pub_date_utc, article["title"]))
         conn.commit()
         logger.info(f"Saved article '{article['title']}' with date '{article['pub_date']}' to the database.")
     else:
@@ -291,6 +285,7 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
 
             if not is_related:
                 logger.info(f"Skipping non-AI related article: {article['title']}")
+                save_article_to_db(rss_url, article)
                 return
             print(f"New article found: {article['title']}")
             summary = await summarize_content(session, article['title'], article['content'])
@@ -381,4 +376,4 @@ async def monitor_feed():
         async with ClientSession() as session:
             tasks = [process_rss_url(session, rss_url, latest_pub_dates, titles) for rss_url in rss_urls]
             await asyncio.gather(*tasks)
-        await asyncio.sleep(300)
+        await asyncio.sleep(600)
