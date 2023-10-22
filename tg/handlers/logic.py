@@ -40,6 +40,7 @@ def init_db():
             );
         """)
     conn.commit()
+    logger.info("Database initialized and table created if not exists.")
 
 
 init_db()
@@ -50,6 +51,10 @@ def is_article_processed(title: str) -> bool:
     with conn.cursor() as cursor:
         cursor.execute("SELECT COUNT(*) FROM latest_articles WHERE title = %s;", (title,))
         count = cursor.fetchone()[0]
+        if count > 0:
+            logger.info(f"Article '{title}' has already been processed.")
+        else:
+            logger.info(f"Article '{title}' has not been processed yet.")
         return count > 0
 
 
@@ -241,6 +246,7 @@ def save_article_to_db(rss_url: str, article: Dict[str, Any]):
             SET pub_date = %s, title = %s;
         """, (rss_url, article["pub_date"], article["title"], article["pub_date"], article["title"]))
     conn.commit()
+    logger.info(f"Saved article '{article['title']}' with date '{article['pub_date']}' to the database.")
 
 
 async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates: Dict[str, Any],
@@ -321,7 +327,7 @@ async def monitor_feed():
     rss_feeds = load_rss_feeds()
     rss_urls = list(rss_feeds.keys())
     latest_pub_dates = load_latest_pub_dates()
-    first_run = not bool(latest_pub_dates)  # Check if it's the first run
+    first_run = True  # Initialize first_run to True
     titles = {}  # Initialize an empty dictionary to store titles
 
     while True:
@@ -338,11 +344,8 @@ async def monitor_feed():
                 if rss_url in latest_pub_dates:
                     del latest_pub_dates[rss_url]
         async with ClientSession() as session:
-            if first_run:  # If it's the first run, just update the latest article timestamps
-                tasks = [process_rss_url(session, rss_url, latest_pub_dates, titles, first_run=True) for rss_url in
-                         rss_urls]
-            else:
-                tasks = [process_rss_url(session, rss_url, latest_pub_dates, titles) for rss_url in rss_urls]
+            tasks = [process_rss_url(session, rss_url, latest_pub_dates, titles, first_run=first_run) for rss_url in
+                     rss_urls]
             await asyncio.gather(*tasks)
         if first_run:  # If it's the first run, update the flag after processing all feeds
             first_run = False
