@@ -213,7 +213,7 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
     for entry in feed.entries[:2]:
         if 'title' not in entry:
             logger.error(f"Missing 'title' key in RSS entry for URL: {rss_url}")
-            return
+            continue
         pub_date = parse_pub_date(entry.published)
         logger.info(f"Debugging: Parsed pub_date: {pub_date}")
 
@@ -221,6 +221,9 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
         if latest_pub_date:
             if isinstance(latest_pub_date, str):
                 latest_pub_date = parse_pub_date(latest_pub_date)
+            # Ensure the latest_pub_date is timezone-aware
+            if latest_pub_date.tzinfo is None or latest_pub_date.tzinfo.utcoffset(latest_pub_date) is None:
+                latest_pub_date = pytz.utc.localize(latest_pub_date)
         logger.info(f"Debugging: Latest pub_date after processing: {latest_pub_date}")
 
         if latest_pub_date and pub_date <= latest_pub_date:
