@@ -43,9 +43,6 @@ def init_db():
     logger.info("Database initialized and table created if not exists.")
 
 
-init_db()
-
-
 def is_article_processed(title: str) -> bool:
     """Check if the article with the given title has already been processed."""
     with conn.cursor() as cursor:
@@ -323,6 +320,7 @@ def save_latest_pub_dates(latest_pub_dates: Dict[str, datetime.datetime], titles
 
 
 async def monitor_feed():
+    init_db()
     logger.info("Starting to monitor feeds...")
     rss_feeds = load_rss_feeds()
     rss_urls = list(rss_feeds.keys())
