@@ -328,7 +328,7 @@ async def store_latest_articles(session: ClientSession, rss_url: str, latest_pub
         save_latest_pub_dates(latest_pub_dates, titles)  # Save to DB
 
 
-def initialize_feeds():
+async def initialize_feeds():
     """Initialize the feeds by storing the latest articles' date and title in the database."""
     init_db()
     rss_feeds = load_rss_feeds()
@@ -338,13 +338,13 @@ def initialize_feeds():
 
     async with ClientSession() as session:
         tasks = [store_latest_articles(session, rss_url, latest_pub_dates, titles) for rss_url in rss_urls]
-        asyncio.run(asyncio.gather(*tasks))
+        await asyncio.gather(*tasks)
 
     logger.info("Feeds initialized successfully.")
 
 
 async def monitor_feed():
-    initialize_feeds()
+    await initialize_feeds()
     logger.info("Starting to monitor feeds...")
     rss_feeds = load_rss_feeds()
     rss_urls = list(rss_feeds.keys())
