@@ -219,13 +219,19 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
             logger.error(f"Missing 'title' key in RSS entry for URL: {rss_url}")
             continue
         pub_date = parse_pub_date(entry.published)
+        logger.info(f"Debugging: Parsed pub_date: {pub_date}")
+        logger.info(f"Debugging: Latest pub_date before processing: {latest_pub_date}")
         # Ensure latest_pub_date is timezone-aware before comparing
         if latest_pub_date:
             if isinstance(latest_pub_date, str):
                 latest_pub_date = parse_pub_date(latest_pub_date)
             elif latest_pub_date.tzinfo is None or latest_pub_date.tzinfo.utcoffset(latest_pub_date) is None:
                 latest_pub_date = pytz.utc.localize(latest_pub_date)
+        logger.info(f"Debugging: Latest pub_date after processing: {latest_pub_date}")
+
         if latest_pub_date and pub_date <= latest_pub_date:
+            logger.info(
+                f"Debugging: Skipping article with pub_date {pub_date} as it's older or equal to latest pub_date {latest_pub_date}")
             continue
         title = entry.title
         link = entry.link
@@ -283,7 +289,7 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
 
             if not is_related:
                 logger.info(f"Skipping non-AI related article: {article['title']}")
-                continue
+                return
             print(f"New article found: {article['title']}")
             summary = await summarize_content(session, article['title'], article['content'])
             news_object = {
