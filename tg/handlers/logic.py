@@ -264,24 +264,22 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
         try:
             article = await fetch_latest_article_from_rss(session, rss_url, latest_pub_dates.get(rss_url), first_run)
 
-            if first_run:
-                if article:
-                    latest_pub_dates[rss_url] = article["pub_date"]
-                    titles[rss_url] = article["title"]
-                return
-
             if article:
+                # Update the timestamp and title regardless of whether the article is AI-related or not
+                latest_pub_dates[rss_url] = article["pub_date"].isoformat()
+                titles[rss_url] = article["title"]
+                save_latest_pub_dates(latest_pub_dates, titles)  # Save to DB
+
+                if first_run:
+                    logger.info(f"First run: Stored article {article['title']} from {rss_url}")
+                    return
+
                 # Check if the article has already been processed
                 if article['title'] == titles.get(rss_url):
                     logger.info(f"Article {article['title']} has already been processed. Skipping...")
                     return  # Skip the rest of the processing for this article
 
                 is_related = await is_article_related_to_ai(article['title'], article['content'])
-
-                # Update the timestamp and title regardless of whether the article is AI-related or not
-                latest_pub_dates[rss_url] = article["pub_date"].isoformat()
-                titles[rss_url] = article["title"]
-                save_latest_pub_dates(latest_pub_dates, titles)
 
                 if not is_related:
                     logger.info(f"Skipping non-AI related article: {article['title']}")
