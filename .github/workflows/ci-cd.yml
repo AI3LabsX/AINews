@@ -1,12 +1,15 @@
 name: CI/CD Pipeline
 
 on:
-  push:
+  pull_request:
     branches:
       - master
+    paths-ignore:
+      - '**.md'  # This is optional. It ignores changes to markdown files.
 
 jobs:
   build:
+    if: github.head_ref == 'dev'
     runs-on: ubuntu-latest
 
     steps:
@@ -23,30 +26,30 @@ jobs:
           ls -la
           python --version
           cat Pipfile.lock
+
       - name: Cache dependencies
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: pip-v2-${{ runner.os }}-${{ hashFiles('**/Pipfile.lock') }}
 
-
       - name: Install dependencies
         run: |
           pip install pipenv
           pipenv install
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Deploy to Heroku
-        uses: akhileshns/heroku-deploy@v3.5.7
-        with:
-          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-          heroku_app_name: "ai3labsnews"
-          heroku_email: "riharex420@gmail.com"
-          branch: master
+#  deploy:
+#    needs: build
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v2
+#
+#      - name: Deploy to Heroku
+#        uses: akhileshns/heroku-deploy@v3.5.7
+#        with:
+#          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+#          heroku_app_name: "ai3labsnews"
+#          heroku_email: "riharex420@gmail.com"
+#          branch: master

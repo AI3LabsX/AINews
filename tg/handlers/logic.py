@@ -243,7 +243,8 @@ def save_article_to_db(rss_url: str, article: Dict[str, Any]):
     conn.commit()
 
 
-async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates: Dict[str, Any], first_run=False):
+async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates: Dict[str, Any],
+                          titles: Dict[str, str], first_run=False):
     logger.info(f"Processing RSS URL: {rss_url}...")
     retries = 0
     while retries < RETRY_COUNT:
@@ -254,6 +255,7 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
                                                               first_run)
                 if article:
                     latest_pub_dates[rss_url] = article["pub_date"]
+                    titles[rss_url] = article["title"]
                 return
             if article:
                 # Check if the article has already been processed
@@ -263,9 +265,10 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
 
                 is_related = await is_article_related_to_ai(article['title'], article['content'])
 
-                # Update the timestamp regardless of whether the article is AI-related or not
+                # Update the timestamp and title regardless of whether the article is AI-related or not
                 latest_pub_dates[rss_url] = article["pub_date"].isoformat()
-                save_latest_pub_dates(latest_pub_dates, article['title'])
+                titles[rss_url] = article["title"]
+                save_latest_pub_dates(latest_pub_dates, titles)
 
                 if not is_related:
                     logger.info(f"Skipping non-AI related article: {article['title']}")
@@ -299,10 +302,11 @@ def load_latest_pub_dates():
         return {row[0]: row[1] for row in rows}
 
 
-def save_latest_pub_dates(latest_pub_dates, title=None):
-    """Save the latest publication dates to the database."""
+def save_latest_pub_dates(latest_pub_dates: Dict[str, datetime.datetime], titles: Dict[str, str]):
+    """Save the latest publication dates and titles to the database."""
     with conn.cursor() as cursor:
         for rss_url, pub_date in latest_pub_dates.items():
+            title = titles.get(rss_url)
             cursor.execute("""
                 INSERT INTO latest_articles (rss_url, pub_date, title)
                 VALUES (%s, %s, %s)
@@ -318,6 +322,8 @@ async def monitor_feed():
     rss_urls = list(rss_feeds.keys())
     latest_pub_dates = load_latest_pub_dates()
     first_run = not bool(latest_pub_dates)  # Check if it's the first run
+    titles = {}  # Initialize an empty dictionary to store titles
+
     while True:
         updated_rss_feeds = load_rss_feeds()
         updated_rss_urls = list(updated_rss_feeds.keys())
@@ -333,9 +339,10 @@ async def monitor_feed():
                     del latest_pub_dates[rss_url]
         async with ClientSession() as session:
             if first_run:  # If it's the first run, just update the latest article timestamps
-                tasks = [process_rss_url(session, rss_url, latest_pub_dates, first_run=True) for rss_url in rss_urls]
+                tasks = [process_rss_url(session, rss_url, latest_pub_dates, titles, first_run=True) for rss_url in
+                         rss_urls]
             else:
-                tasks = [process_rss_url(session, rss_url, latest_pub_dates) for rss_url in rss_urls]
+                tasks = [process_rss_url(session, rss_url, latest_pub_dates, titles) for rss_url in rss_urls]
             await asyncio.gather(*tasks)
         if first_run:  # If it's the first run, update the flag after processing all feeds
             first_run = False
