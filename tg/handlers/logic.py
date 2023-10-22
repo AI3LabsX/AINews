@@ -213,7 +213,8 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
     logger.info(f"Fetching latest article from RSS: {rss_url}...")
     feed = feedparser.parse(rss_url)
     articles = []
-    for entry in feed.entries:
+    # Process only the first two entries
+    for entry in feed.entries[:2]:
         # Check if the 'title' key exists in the entry
         if 'title' not in entry:
             logger.error(f"Missing 'title' key in RSS entry for URL: {rss_url}")
@@ -221,6 +222,7 @@ async def fetch_latest_article_from_rss(session: ClientSession, rss_url: str, la
         pub_date = parse_pub_date(entry.published)
         logger.info(f"Debugging: Parsed pub_date: {pub_date}")
         logger.info(f"Debugging: Latest pub_date before processing: {latest_pub_date}")
+
         # Ensure latest_pub_date is timezone-aware before comparing
         if latest_pub_date:
             if isinstance(latest_pub_date, str):
