@@ -346,6 +346,8 @@ async def store_latest_articles(session: ClientSession, rss_url: str, latest_pub
         latest_pub_dates[rss_url] = article["pub_date"].isoformat()
         titles[rss_url] = article["title"]
         save_latest_pub_dates(latest_pub_dates, titles)  # Save to DB
+    else:
+        logger.warning(f"No new articles found for RSS: {rss_url}. Skipping database update.")
 
 
 async def initialize_feeds():
