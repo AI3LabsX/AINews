@@ -335,8 +335,12 @@ async def monitor_feed():
     rss_feeds = load_rss_feeds()
     rss_urls = list(rss_feeds.keys())
     latest_pub_dates = load_latest_pub_dates()
-    first_run = True  # Initialize first_run to True
     titles = {}  # Initialize an empty dictionary to store titles
+
+    # Handle first run logic outside the while loop
+    async with ClientSession() as session:
+        tasks = [process_rss_url(session, rss_url, latest_pub_dates, titles, first_run=True) for rss_url in rss_urls]
+        await asyncio.gather(*tasks)
 
     while True:
         updated_rss_feeds = load_rss_feeds()
@@ -352,9 +356,7 @@ async def monitor_feed():
                 if rss_url in latest_pub_dates:
                     del latest_pub_dates[rss_url]
         async with ClientSession() as session:
-            tasks = [process_rss_url(session, rss_url, latest_pub_dates, titles, first_run=first_run) for rss_url in
+            tasks = [process_rss_url(session, rss_url, latest_pub_dates, titles, first_run=False) for rss_url in
                      rss_urls]
             await asyncio.gather(*tasks)
-        if first_run:  # If it's the first run, update the flag after processing all feeds
-            first_run = False
         await asyncio.sleep(300)
