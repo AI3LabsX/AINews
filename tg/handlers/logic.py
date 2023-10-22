@@ -327,12 +327,13 @@ def save_latest_pub_dates(latest_pub_dates: Dict[str, datetime.datetime], titles
     with conn.cursor() as cursor:
         for rss_url, pub_date in latest_pub_dates.items():
             title = titles.get(rss_url)
-            cursor.execute("""
-                INSERT INTO latest_articles (rss_url, pub_date, title)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (rss_url) DO UPDATE
-                SET pub_date = %s, title = %s;
-            """, (rss_url, pub_date, title, pub_date, title))
+            if title is not None:  # Only update if title is not None
+                cursor.execute("""
+                    INSERT INTO latest_articles (rss_url, pub_date, title)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (rss_url) DO UPDATE
+                    SET pub_date = %s, title = %s;
+                """, (rss_url, pub_date, title, pub_date, title))
     conn.commit()
 
 
