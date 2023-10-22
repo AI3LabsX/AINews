@@ -43,6 +43,16 @@ def init_db():
     logger.info("Database initialized and table created if not exists.")
 
 
+def get_latest_article_from_db(rss_url: str) -> Optional[Dict[str, Any]]:
+    """Get the latest article's title and date from the database for a given RSS URL."""
+    with conn.cursor() as cursor:
+        cursor.execute("SELECT pub_date, title FROM latest_articles WHERE rss_url = %s;", (rss_url,))
+        result = cursor.fetchone()
+        if result:
+            return {"pub_date": result[0], "title": result[1]}
+    return None
+
+
 def is_article_processed(title: str) -> bool:
     """Check if the article with the given title has already been processed."""
     with conn.cursor() as cursor:
@@ -253,16 +263,16 @@ async def process_rss_url(session: ClientSession, rss_url: str, latest_pub_dates
     while retries < RETRY_COUNT:
         try:
             article = await fetch_latest_article_from_rss(session, rss_url, latest_pub_dates.get(rss_url), first_run)
+
             if first_run:
-                article = await fetch_latest_article_from_rss(session, rss_url, latest_pub_dates.get(rss_url),
-                                                              first_run)
                 if article:
                     latest_pub_dates[rss_url] = article["pub_date"]
                     titles[rss_url] = article["title"]
                 return
+
             if article:
                 # Check if the article has already been processed
-                if is_article_processed(article['title']):
+                if article['title'] == titles.get(rss_url):
                     logger.info(f"Article {article['title']} has already been processed. Skipping...")
                     return  # Skip the rest of the processing for this article
 
